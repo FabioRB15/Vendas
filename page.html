@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard de Vendas & Comissões</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#fdf2f8',
+              100: '#fce7f3',
+              500: '#ec4899',
+              600: '#db2777',
+              700: '#be185d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background-color: rgba(156, 163, 175, 0.4);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur border-b border-slate-200/80 dark:border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <i data-lucide="sparkles" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-base sm:text-lg font-bold leading-tight">Painel de Vendas & Metas</h1>
+            <!-- Status de sincronização online -->
+            <span id="sync-status" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              Carregando Nuvem...
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Escala Seg-Sáb • Salário Líquido CLT + Comissão Livre</p>
+        </div>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <button id="btn-recarregar" title="Atualizar dados agora" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+        </button>
+
+        <button id="btn-config-cloud" title="Configurar Conexão Nuvem (JSONBin)" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+          <i data-lucide="cloud-cog" class="w-4 h-4 text-violet-600 dark:text-violet-400"></i>
+        </button>
+
+        <button id="btn-theme-toggle" title="Alternar Modo Escuro" class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
+          <i data-lucide="moon" class="w-4 h-4 block dark:hidden"></i>
+          <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+        </button>
+
+        <button id="btn-nova-venda" class="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-lg bg-gradient-to-r from-brand-600 to-violet-600 hover:from-brand-700 hover:to-violet-700 text-white shadow-sm shadow-brand-600/30 transition-all">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Nova Venda</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full space-y-6">
+
+    <!-- Seção de Metas & Remuneração -->
+    <section class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm space-y-5">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center p-1.5 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600 dark:text-brand-400">
+              <i data-lucide="target" class="w-4 h-4"></i>
+            </span>
+            <h2 class="text-base font-bold">Progresso das Metas & Remuneração</h2>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Escala Seg-Sáb (sem feriados) • Salário Líquido CLT (R$ 1.499,42) + Comissão Integral</p>
+        </div>
+
+        <div class="flex items-center gap-1.5 self-start sm:self-auto bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+          <span class="text-xs font-semibold px-2 text-slate-500">Alvo:</span>
+          <button class="target-selector-btn px-2.5 py-1 text-xs font-bold rounded-lg transition-colors" data-target="110000">110k (1,5%)</button>
+          <button class="target-selector-btn px-2.5 py-1 text-xs font-bold rounded-lg transition-colors" data-target="120000">120k (2%)</button>
+          <button class="target-selector-btn px-2.5 py-1 text-xs font-bold rounded-lg transition-colors" data-target="130000">130k (2,1%)</button>
+          <button class="target-selector-btn px-2.5 py-1 text-xs font-bold rounded-lg transition-colors" data-target="140000">140k (2,5%)</button>
+        </div>
+      </div>
+
+      <!-- Cards de Destaque da Meta & Remuneração -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Remuneração Total no Bolso -->
+        <div class="bg-gradient-to-br from-brand-50/70 to-violet-50/40 dark:from-slate-800/60 dark:to-slate-800/20 rounded-xl p-4 border border-brand-100/60 dark:border-slate-800">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">
+            <span>Total no Bolso (Líquido)</span>
+            <span id="badge-taxa-comissao" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-brand-100 text-brand-700 dark:bg-brand-900/60 dark:text-brand-300">1,0%</span>
+          </div>
+          <div id="card-remuneracao-total" class="text-2xl font-extrabold text-slate-900 dark:text-white">R$ 0,00</div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 space-y-1 pt-2 border-t border-brand-100/60 dark:border-slate-700/60">
+            <div class="flex items-center justify-between">
+              <span>Líquido Carteira (com INSS):</span>
+              <b class="text-slate-700 dark:text-slate-200">R$ 1.499,42</b>
+            </div>
+            <div class="flex items-center justify-between">
+              <span>Comissão (por fora integral):</span>
+              <b id="card-valor-comissao" class="text-brand-600 dark:text-brand-400">R$ 0,00</b>
+            </div>
+          </div>
+        </div>
+
+        <!-- Meta Diária Restante -->
+        <div class="bg-slate-50/70 dark:bg-slate-800/40 rounded-xl p-4 border border-slate-200/60 dark:border-slate-800">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">
+            <span>Meta Diária Necessária</span>
+            <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400"></i>
+          </div>
+          <div id="card-meta-diaria-restante" class="text-2xl font-extrabold text-slate-900 dark:text-white">R$ 0,00</div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+            <span>Dias úteis restantes:</span>
+            <b id="dias-uteis-restantes" class="text-slate-700 dark:text-slate-200">0 dias</b>
+          </div>
+        </div>
+
+        <!-- Saldo para Bater a Meta Selecionada -->
+        <div class="bg-slate-50/70 dark:bg-slate-800/40 rounded-xl p-4 border border-slate-200/60 dark:border-slate-800">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">
+            <span>Falta Faturar</span>
+            <i data-lucide="trending-up" class="w-3.5 h-3.5 text-slate-400"></i>
+          </div>
+          <div id="card-falta-faturar" class="text-2xl font-extrabold text-slate-900 dark:text-white">R$ 0,00</div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+            <span>Meta Alvo:</span>
+            <b id="card-alvo-valor" class="text-slate-700 dark:text-slate-200">R$ 110.000</b>
+          </div>
+        </div>
+
+        <!-- Próximo Degrau de Comissão -->
+        <div class="bg-slate-50/70 dark:bg-slate-800/40 rounded-xl p-4 border border-slate-200/60 dark:border-slate-800">
+          <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">
+            <span>Próximo Degrau</span>
+            <i data-lucide="award" class="w-3.5 h-3.5 text-amber-500"></i>
+          </div>
+          <div id="card-proximo-salto" class="text-2xl font-extrabold text-amber-600 dark:text-amber-400">1,5%</div>
+          <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-2 flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+            <span>Falta para subir:</span>
+            <b id="card-falta-proximo-salto" class="text-slate-700 dark:text-slate-200">R$ 0,00</b>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de Progresso com os Degraus -->
+      <div class="space-y-2 pt-1">
+        <div class="flex items-center justify-between text-xs font-semibold">
+          <span class="text-slate-600 dark:text-slate-400">Progresso no Mês (<span id="txt-progresso-percent">0%</span> da meta de <span id="txt-meta-selecionada-nome">110k</span>)</span>
+          <span class="text-slate-500 text-[11px]" id="txt-dias-uteis-resumo">0 de 0 dias úteis decorridos</span>
+        </div>
+        <div class="w-full h-3.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden relative border border-slate-200/50 dark:border-slate-700">
+          <div id="progress-bar-fill" class="h-full bg-gradient-to-r from-brand-500 via-pink-500 to-violet-600 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+        
+        <!-- Marcadores das 4 metas -->
+        <div class="grid grid-cols-4 gap-2 pt-2 text-center text-xs">
+          <div class="p-2 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30" id="tier-110">
+            <div class="font-bold text-slate-700 dark:text-slate-200">110k</div>
+            <div class="text-[11px] text-slate-500">1,5% comissão</div>
+          </div>
+          <div class="p-2 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30" id="tier-120">
+            <div class="font-bold text-slate-700 dark:text-slate-200">120k</div>
+            <div class="text-[11px] text-slate-500">2,0% comissão</div>
+          </div>
+          <div class="p-2 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30" id="tier-130">
+            <div class="font-bold text-slate-700 dark:text-slate-200">130k</div>
+            <div class="text-[11px] text-slate-500">2,1% comissão</div>
+          </div>
+          <div class="p-2 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30" id="tier-140">
+            <div class="font-bold text-slate-700 dark:text-slate-200">140k</div>
+            <div class="text-[11px] text-slate-500">2,5% comissão</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Cards Principais de Vendas -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">
+          <span>Vendas de Hoje</span>
+          <div class="p-1.5 rounded-lg bg-pink-50 dark:bg-pink-950/60 text-brand-600 dark:text-brand-400">
+            <i data-lucide="calendar-check" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div id="card-vendas-hoje" class="text-2xl font-extrabold text-slate-900 dark:text-white">R$ 0,00</div>
+        <div class="text-xs text-slate-500 dark:text-slate-400 mt-2 flex items-center gap-1">
+          <span id="card-pedidos-hoje" class="font-bold text-slate-700 dark:text-slate-200">0 pedidos</span> hoje
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">
+          <span>Faturamento do Mês</span>
+          <div class="p-1.5 rounded-lg bg-violet-50 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400">
+            <i data-lucide="badge-dollar-sign" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div id="card-vendas-mes" class="text-2xl font-extrabold text-slate-900 dark:text-white">R$ 0,00</div>
+        <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+          Total acumulado no mês corrente
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">
+          <span>Ticket Médio</span>
+          <div class="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+            <i data-lucide="receipt" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div id="card-ticket-medio" class="text-2xl font-extrabold text-slate-900 dark:text-white">R$ 0,00</div>
+        <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+          Média por lançamento no mês
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">
+          <span>Lançamentos no Mês</span>
+          <div class="p-1.5 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400">
+            <i data-lucide="shopping-bag" class="w-4 h-4"></i>
+          </div>
+        </div>
+        <div id="card-total-pedidos" class="text-2xl font-extrabold text-slate-900 dark:text-white">0</div>
+        <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+          Transações registradas
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Evolução Diária</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Vendas dos últimos 15 dias</p>
+          </div>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 font-medium text-slate-600 dark:text-slate-300">Diário</span>
+        </div>
+        <div class="relative flex-1 min-h-[260px] w-full">
+          <canvas id="chart-diario"></canvas>
+        </div>
+      </div>
+
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-5 shadow-sm flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Comparativo Mensal</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Faturamento dos últimos 6 meses</p>
+          </div>
+          <span class="text-xs px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 font-medium text-slate-600 dark:text-slate-300">Mensal</span>
+        </div>
+        <div class="relative flex-1 min-h-[260px] w-full">
+          <canvas id="chart-mensal"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabela de Histórico de Lançamentos -->
+    <section class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+      <div class="p-4 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <h3 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Histórico de Lançamentos</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Lista completa das vendas salvas na nuvem</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1 sm:w-60">
+            <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+            <input type="text" id="filtro-busca" placeholder="Buscar venda..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <select id="filtro-pagamento" class="text-xs py-1.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="todos">Todos Pagamentos</option>
+            <option value="Pix">Pix</option>
+            <option value="Cartão de Crédito">Cartão de Crédito</option>
+            <option value="Cartão de Débito">Cartão de Débito</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="A Definir">A Definir</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full text-left border-collapse text-xs sm:text-sm">
+          <thead>
+            <tr class="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider font-semibold">
+              <th class="py-3 px-4">Data</th>
+              <th class="py-3 px-4">Descrição / Produto</th>
+              <th class="py-3 px-4">Pagamento</th>
+              <th class="py-3 px-4 text-right">Valor</th>
+              <th class="py-3 px-4 text-center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tabela-vendas-corpo" class="divide-y divide-slate-100 dark:divide-slate-800/60">
+            <!-- Injetado via Javascript -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal Configuração JSONBin (Nuvem) -->
+  <div id="modal-config" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div class="flex items-center gap-2">
+          <i data-lucide="cloud" class="w-5 h-5 text-violet-600"></i>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Conexão Nuvem (JSONBin.io)</h3>
+        </div>
+        <button id="btn-fechar-config" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-500 dark:text-slate-400">
+        Insira suas credenciais do <b>JSONBin.io</b> para que ela abra no celular e visualize os mesmos dados que você alimenta por aqui.
+      </p>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">BIN ID</label>
+          <input type="text" id="cfg-bin-id" placeholder="Ex: 6735e123ad19ca34f8..." class="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Master Key ($2a$10$...)</label>
+          <input type="password" id="cfg-api-key" placeholder="Sua Master Key do JSONBin" class="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500">
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <button type="button" id="btn-cancelar-config" class="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">Fechar</button>
+        <button type="button" id="btn-salvar-config" class="px-4 py-2 text-xs font-semibold rounded-xl bg-violet-600 hover:bg-violet-700 text-white shadow-sm shadow-violet-600/30">Salvar e Conectar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nova Venda -->
+  <div id="modal-venda" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Cadastrar Venda Manual</h3>
+        <button id="btn-fechar-modal" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form id="form-venda" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Descrição / Produto</label>
+          <input type="text" id="campo-descricao" required placeholder="Ex: Vestido Floral ou Vendas do Dia" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Valor (R$)</label>
+            <input type="number" step="0.01" min="0.01" id="campo-valor" required placeholder="0,00" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Data</label>
+            <input type="date" id="campo-data" required class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Forma de Pagamento</label>
+          <select id="campo-pagamento" class="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="Pix">Pix</option>
+            <option value="Cartão de Crédito">Cartão de Crédito</option>
+            <option value="Cartão de Débito">Cartão de Débito</option>
+            <option value="Dinheiro">Dinheiro</option>
+            <option value="A Definir">A Definir</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+          <button type="button" id="btn-cancelar-modal" class="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">Cancelar</button>
+          <button type="submit" class="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-brand-600 to-violet-600 hover:from-brand-700 hover:to-violet-700 text-white shadow-sm shadow-brand-600/30">Salvar Venda</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. CONFIGURAÇÕES FIXAS (JSONBIN & SALÁRIO)
+    // ==========================================
+    // Você pode colar suas chaves direto nestas duas linhas:
+    let DEFAULT_BIN_ID = ""; // Ex: "6735e123ad19ca34f8abcde"
+    let DEFAULT_API_KEY = ""; // Ex: "$2a$10$abcdef..."
+
+    // Salário Mínimo e Descontos CLT Oficiais
+    const SALARIO_BRUTO = 1621.00;
+    const DESCONTO_INSS = 121.58; // 7,5% primeira faixa
+    const SALARIO_LIQUIDO = 1499.42; // Base líquida na carteira
+
+    let targetAtivo = 110000;
+
+    // Recupera chaves salvas localmente se existirem
+    let JSONBIN_BIN_ID = localStorage.getItem('jsonbin_bin_id') || DEFAULT_BIN_ID;
+    let JSONBIN_API_KEY = localStorage.getItem('jsonbin_api_key') || DEFAULT_API_KEY;
+
+    // Base de vendas padrão inicial (com o lançamento cadastrado)
+    const dadosIniciais = [
+      { id: '1', descricao: 'Vendas do Dia (Ajuste)', valor: 6176.00, data: '2026-11-03', pagamento: 'A Definir' }
+    ];
+
+    let vendas = JSON.parse(localStorage.getItem('vendas_app_data')) || dadosIniciais;
+
+    // ==========================================
+    // 2. SINCRONIZAÇÃO COM JSONBIN.IO (NUVEM)
+    // ==========================================
+    function setSyncStatus(tipo, texto) {
+      const el = document.getElementById('sync-status');
+      if (!el) return;
+      if (tipo === 'online') {
+        el.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300";
+        el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> ${texto}`;
+      } else if (tipo === 'loading') {
+        el.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300";
+        el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> ${texto}`;
+      } else {
+        el.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
+        el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> ${texto}`;
+      }
+    }
+
+    async function carregarDadosNuvem() {
+      if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) {
+        setSyncStatus('offline', 'Modo Local (Offline)');
+        atualizarDashboard();
+        return;
+      }
+
+      setSyncStatus('loading', 'Sincronizando...');
+      try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+          method: 'GET',
+          headers: {
+            'X-Master-Key': JSONBIN_API_KEY
+          }
+        });
+
+        if (!response.ok) throw new Error('Falha ao conectar com o servidor');
+
+        const resultado = await response.json();
+        if (resultado.record && Array.isArray(resultado.record)) {
+          vendas = resultado.record;
+          localStorage.setItem('vendas_app_data', JSON.stringify(vendas));
+          setSyncStatus('online', 'Nuvem Conectada');
+          atualizarDashboard();
+        }
+      } catch (err) {
+        console.warn('Erro ao ler da nuvem:', err);
+        setSyncStatus('offline', 'Falha ao sincronizar (usando cache)');
+        atualizarDashboard();
+      }
+    }
+
+    async function salvarDadosNuvem() {
+      localStorage.setItem('vendas_app_data', JSON.stringify(vendas));
+
+      if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) {
+        atualizarDashboard();
+        return;
+      }
+
+      setSyncStatus('loading', 'Salvando na Nuvem...');
+      try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': JSONBIN_API_KEY
+          },
+          body: JSON.stringify(vendas)
+        });
+
+        if (!response.ok) throw new Error('Falha ao gravar dados');
+        setSyncStatus('online', 'Salvo na Nuvem');
+      } catch (err) {
+        console.error('Erro ao salvar na nuvem:', err);
+        setSyncStatus('offline', 'Erro ao salvar online');
+      }
+    }
+
+    // ==========================================
+    // 3. REGRAS DE NEGÓCIO (CALENDÁRIO & METAS)
+    // ==========================================
+    function getFeriadosNacionais(ano) {
+      const a = ano % 19;
+      const b = Math.floor(ano / 100);
+      const c = ano % 100;
+      const d = Math.floor(b / 4);
+      const e = b % 4;
+      const f = Math.floor((b + 8) / 25);
+      const g = Math.floor((b - f + 1) / 3);
+      const h = (19 * a + b - d - g + 15) % 30;
+      const i = Math.floor(c / 4);
+      const k = c % 4;
+      const l = (32 + 2 * e + 2 * i - h - k) % 7;
+      const m = Math.floor((a + 11 * h + 22 * l) / 451);
+      const mesPascoa = Math.floor((h + l - 7 * m + 114) / 31);
+      const diaPascoa = ((h + l - 7 * m + 114) % 31) + 1;
+
+      const pascoa = new Date(ano, mesPascoa - 1, diaPascoa);
+      
+      const formatData = (base, dias) => {
+        const res = new Date(base);
+        res.setDate(res.getDate() + dias);
+        const y = res.getFullYear();
+        const m = String(res.getMonth() + 1).padStart(2, '0');
+        const day = String(res.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+
+      const feriadosFixos = [
+        `${ano}-01-01`, // Confraternização Universal
+        `${ano}-04-21`, // Tiradentes
+        `${ano}-05-01`, // Dia do Trabalho
+        `${ano}-09-07`, // Independência
+        `${ano}-10-12`, // Padroeira
+        `${ano}-11-02`, // Finados
+        `${ano}-11-15`, // Proclamação da República
+        `${ano}-11-20`, // Consciência Negra
+        `${ano}-12-25`, // Natal
+      ];
+
+      return new Set([
+        ...feriadosFixos,
+        formatData(pascoa, -47), // Carnaval
+        formatData(pascoa, -2),  // Sexta-feira Santa
+        formatData(pascoa, 60)   // Corpus Christi
+      ]);
+    }
+
+    function calcularDiasUteisMes(ano, mesZeroIndexed) {
+      const feriados = getFeriadosNacionais(ano);
+      const ultimoDiaMes = new Date(ano, mesZeroIndexed + 1, 0).getDate();
+      const hoje = new Date();
+      const ehMesAtual = hoje.getFullYear() === ano && hoje.getMonth() === mesZeroIndexed;
+
+      let totalUteis = 0;
+      let uteisDecorridos = 0;
+      let uteisRestantes = 0;
+
+      for (let dia = 1; dia <= ultimoDiaMes; dia++) {
+        const dataAtual = new Date(ano, mesZeroIndexed, dia);
+        const diaSemana = dataAtual.getDay(); // 0 = Domingo
+        const y = dataAtual.getFullYear();
+        const m = String(dataAtual.getMonth() + 1).padStart(2, '0');
+        const d = String(dataAtual.getDate()).padStart(2, '0');
+        const dataStr = `${y}-${m}-${d}`;
+
+        const ehDomingo = diaSemana === 0;
+        const ehFeriado = feriados.has(dataStr);
+
+        if (!ehDomingo && !ehFeriado) {
+          totalUteis++;
+          if (ehMesAtual) {
+            const dataHojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`;
+            if (dataStr <= dataHojeStr) {
+              uteisDecorridos++;
+            } else {
+              uteisRestantes++;
+            }
+          }
+        }
+      }
+
+      if (!ehMesAtual) {
+        uteisDecorridos = totalUteis;
+        uteisRestantes = 0;
+      }
+
+      return { totalUteis, uteisDecorridos, uteisRestantes };
+    }
+
+    function calcularComissao(faturamento) {
+      if (faturamento >= 140000) return { taxa: 0.025, taxaStr: "2,5%", proximoSalto: null, faltaSalto: 0 };
+      if (faturamento >= 130000) return { taxa: 0.021, taxaStr: "2,1%", proximoSalto: "2,5%", faltaSalto: 140000 - faturamento };
+      if (faturamento >= 120000) return { taxa: 0.020, taxaStr: "2,0%", proximoSalto: "2,1%", faltaSalto: 130000 - faturamento };
+      if (faturamento >= 110000) return { taxa: 0.015, taxaStr: "1,5%", proximoSalto: "2,0%", faltaSalto: 120000 - faturamento };
+      return { taxa: 0.010, taxaStr: "1,0%", proximoSalto: "1,5%", faltaSalto: 110000 - faturamento };
+    }
+
+    function formatMoeda(val) {
+      return Number(val).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    // ==========================================
+    // 4. ATUALIZAÇÃO DA TELA E DOS GRÁFICOS
+    // ==========================================
+    let chartDiarioInstance = null;
+    let chartMensalInstance = null;
+
+    function initCharts() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const gridColor = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)';
+      const textColor = isDark ? '#94a3b8' : '#64748b';
+
+      const ctxDiario = document.getElementById('chart-diario').getContext('2d');
+      chartDiarioInstance = new Chart(ctxDiario, {
+        type: 'line',
+        data: { labels: [], datasets: [{ label: 'Vendas (R$)', data: [], borderColor: '#ec4899', backgroundColor: 'rgba(236, 72, 153, 0.1)', tension: 0.35, fill: true, pointBackgroundColor: '#ec4899', borderWidth: 2 }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 11 } } },
+            y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 11 }, callback: v => 'R$ ' + v.toLocaleString('pt-BR') } }
+          }
+        }
+      });
+
+      const ctxMensal = document.getElementById('chart-mensal').getContext('2d');
+      chartMensalInstance = new Chart(ctxMensal, {
+        type: 'bar',
+        data: { labels: [], datasets: [{ label: 'Faturamento', data: [], backgroundColor: '#8b5cf6', borderRadius: 6 }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: textColor, font: { size: 11 } } },
+            y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 11 }, callback: v => 'R$ ' + v.toLocaleString('pt-BR') } }
+          }
+        }
+      });
+    }
+
+    function atualizarDashboard() {
+      const hoje = new Date();
+      const anoAtual = hoje.getFullYear();
+      const mesAtualZero = hoje.getMonth();
+      const dataHojeStr = `${anoAtual}-${String(mesAtualZero+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`;
+      const mesAtualChave = `${anoAtual}-${String(mesAtualZero+1).padStart(2,'0')}`;
+
+      let totalHoje = 0;
+      let pedidosHoje = 0;
+      let totalMes = 0;
+      let pedidosMes = 0;
+
+      vendas.forEach(v => {
+        const val = parseFloat(v.valor) || 0;
+        if (v.data === dataHojeStr) {
+          totalHoje += val;
+          pedidosHoje++;
+        }
+        if (v.data && v.data.startsWith(mesAtualChave)) {
+          totalMes += val;
+          pedidosMes++;
+        }
+      });
+
+      const ticketMedio = pedidosMes > 0 ? (totalMes / pedidosMes) : 0;
+
+      // Cards de Vendas
+      document.getElementById('card-vendas-hoje').textContent = formatMoeda(totalHoje);
+      document.getElementById('card-pedidos-hoje').textContent = `${pedidosHoje} pedido${pedidosHoje !== 1 ? 's' : ''}`;
+      document.getElementById('card-vendas-mes').textContent = formatMoeda(totalMes);
+      document.getElementById('card-ticket-medio').textContent = formatMoeda(ticketMedio);
+      document.getElementById('card-total-pedidos').textContent = pedidosMes;
+
+      // Dias Úteis
+      const { totalUteis, uteisDecorridos, uteisRestantes } = calcularDiasUteisMes(anoAtual, mesAtualZero);
+      document.getElementById('dias-uteis-restantes').textContent = `${uteisRestantes} dia${uteisRestantes !== 1 ? 's' : ''}`;
+      document.getElementById('txt-dias-uteis-resumo').textContent = `${uteisDecorridos} de ${totalUteis} dias úteis (Seg-Sáb)`;
+
+      // Comissões & Líquido
+      const comissaoInfo = calcularComissao(totalMes);
+      const valorComissao = totalMes * comissaoInfo.taxa;
+      const totalBolso = SALARIO_LIQUIDO + valorComissao;
+
+      document.getElementById('card-valor-comissao').textContent = formatMoeda(valorComissao);
+      document.getElementById('card-remuneracao-total').textContent = formatMoeda(totalBolso);
+      document.getElementById('badge-taxa-comissao').textContent = `${comissaoInfo.taxaStr} comissão`;
+
+      if (comissaoInfo.proximoSalto) {
+        document.getElementById('card-proximo-salto').textContent = comissaoInfo.proximoSalto;
+        document.getElementById('card-falta-proximo-salto').textContent = formatMoeda(comissaoInfo.faltaSalto);
+      } else {
+        document.getElementById('card-proximo-salto').textContent = "Topo!";
+        document.getElementById('card-falta-proximo-salto').textContent = "Meta Máxima";
+      }
+
+      // Meta Alvo e Meta Diária Restante
+      document.getElementById('card-alvo-valor').textContent = formatMoeda(targetAtivo);
+      const faltaFaturar = Math.max(0, targetAtivo - totalMes);
+      document.getElementById('card-falta-faturar').textContent = formatMoeda(faltaFaturar);
+
+      if (faltaFaturar <= 0) {
+        document.getElementById('card-meta-diaria-restante').textContent = "Bateu a Meta! 🎉";
+        document.getElementById('card-meta-diaria-restante').className = "text-2xl font-extrabold text-emerald-600 dark:text-emerald-400";
+      } else {
+        const metaDiaria = uteisRestantes > 0 ? (faltaFaturar / uteisRestantes) : faltaFaturar;
+        document.getElementById('card-meta-diaria-restante').textContent = formatMoeda(metaDiaria);
+        document.getElementById('card-meta-diaria-restante').className = "text-2xl font-extrabold text-slate-900 dark:text-white";
+      }
+
+      // Barra de Progresso
+      const percentualAlvo = Math.min(100, (totalMes / targetAtivo) * 100);
+      document.getElementById('progress-bar-fill').style.width = `${percentualAlvo}%`;
+      document.getElementById('txt-progresso-percent').textContent = `${percentualAlvo.toFixed(1)}%`;
+      document.getElementById('txt-meta-selecionada-nome').textContent = (targetAtivo / 1000) + 'k';
+
+      [110, 120, 130, 140].forEach(degrau => {
+        const el = document.getElementById(`tier-${degrau}`);
+        if (el) {
+          el.className = totalMes >= (degrau * 1000)
+            ? "p-2 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold"
+            : "p-2 rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30";
+        }
+      });
+
+      atualizarGraficos(mesAtualChave);
+      renderizarTabela();
+    }
+
+    function atualizarGraficos(mesAtualChave) {
+      const diasLabels = [];
+      const diasValores = [];
+      for (let i = 14; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const key = `${y}-${m}-${day}`;
+        diasLabels.push(`${day}/${m}`);
+
+        const totalDia = vendas
+          .filter(v => v.data === key)
+          .reduce((acc, curr) => acc + (parseFloat(curr.valor) || 0), 0);
+        diasValores.push(totalDia);
+      }
+
+      if (chartDiarioInstance) {
+        chartDiarioInstance.data.labels = diasLabels;
+        chartDiarioInstance.data.datasets[0].data = diasValores;
+        chartDiarioInstance.update();
+      }
+
+      const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+      const mesesLabels = [];
+      const mesesValores = [];
+      const hoje = new Date();
+
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const key = `${y}-${m}`;
+        mesesLabels.push(`${mesesNomes[d.getMonth()]}/${String(y).slice(2)}`);
+
+        const totalMes = vendas
+          .filter(v => v.data && v.data.startsWith(key))
+          .reduce((acc, curr) => acc + (parseFloat(curr.valor) || 0), 0);
+        mesesValores.push(totalMes);
+      }
+
+      if (chartMensalInstance) {
+        chartMensalInstance.data.labels = mesesLabels;
+        chartMensalInstance.data.datasets[0].data = mesesValores;
+        chartMensalInstance.update();
+      }
+    }
+
+    function renderizarTabela() {
+      const corpo = document.getElementById('tabela-vendas-corpo');
+      const busca = document.getElementById('filtro-busca').value.toLowerCase();
+      const pagFiltro = document.getElementById('filtro-pagamento').value;
+
+      const vendasFiltradas = vendas.filter(v => {
+        const matchBusca = (v.descricao || '').toLowerCase().includes(busca);
+        const matchPag = pagFiltro === 'todos' || v.pagamento === pagFiltro;
+        return matchBusca && matchPag;
+      }).sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+
+      if (vendasFiltradas.length === 0) {
+        corpo.innerHTML = `
+          <tr>
+            <td colspan="5" class="py-8 text-center text-slate-400 text-xs">
+              Nenhuma venda encontrada com os filtros selecionados.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      corpo.innerHTML = vendasFiltradas.map(v => {
+        const partesData = (v.data || '').split('-');
+        const dataFormatada = partesData.length === 3 ? `${partesData[2]}/${partesData[1]}/${partesData[0]}` : v.data;
+
+        let badgePag = 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+        if (v.pagamento === 'Pix') badgePag = 'bg-teal-50 text-teal-700 dark:bg-teal-950/60 dark:text-teal-300';
+        else if (v.pagamento === 'Cartão de Crédito') badgePag = 'bg-violet-50 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300';
+        else if (v.pagamento === 'Cartão de Débito') badgePag = 'bg-sky-50 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300';
+        else if (v.pagamento === 'Dinheiro') badgePag = 'bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300';
+
+        return `
+          <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors">
+            <td class="py-3 px-4 font-mono text-xs text-slate-500 dark:text-slate-400">${dataFormatada}</td>
+            <td class="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">${v.descricao || 'Sem descrição'}</td>
+            <td class="py-3 px-4">
+              <span class="px-2 py-0.5 rounded-md text-xs font-semibold ${badgePag}">${v.pagamento || 'A Definir'}</span>
+            </td>
+            <td class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">${formatMoeda(v.valor)}</td>
+            <td class="py-3 px-4 text-center">
+              <button onclick="removerVenda('${v.id}')" title="Excluir Venda" class="p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    window.removerVenda = function(id) {
+      if (confirm('Deseja realmente remover esta venda?')) {
+        vendas = vendas.filter(v => v.id !== id);
+        salvarDadosNuvem();
+        atualizarDashboard();
+      }
+    };
+
+    // ==========================================
+    // 5. EVENTOS, MODAIS E CONTROLES
+    // ==========================================
+    function setupTargetSelector() {
+      const btns = document.querySelectorAll('.target-selector-btn');
+      btns.forEach(btn => {
+        const val = parseInt(btn.getAttribute('data-target'));
+        const atualizarEstilo = () => {
+          if (val === targetAtivo) {
+            btn.className = 'target-selector-btn px-2.5 py-1 text-xs font-bold rounded-lg bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-400 shadow-sm transition-colors';
+          } else {
+            btn.className = 'target-selector-btn px-2.5 py-1 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors';
+          }
+        };
+        atualizarEstilo();
+        btn.addEventListener('click', () => {
+          targetAtivo = val;
+          setupTargetSelector();
+          atualizarDashboard();
+        });
+      });
+    }
+
+    // Modal Nova Venda
+    const modalVenda = document.getElementById('modal-venda');
+    document.getElementById('btn-nova-venda').addEventListener('click', () => {
+      document.getElementById('campo-data').value = new Date().toISOString().split('T')[0];
+      modalVenda.classList.remove('hidden');
+    });
+    document.getElementById('btn-fechar-modal').addEventListener('click', () => modalVenda.classList.add('hidden'));
+    document.getElementById('btn-cancelar-modal').addEventListener('click', () => modalVenda.classList.add('hidden'));
+
+    document.getElementById('form-venda').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const desc = document.getElementById('campo-descricao').value.trim();
+      const val = parseFloat(document.getElementById('campo-valor').value);
+      const data = document.getElementById('campo-data').value;
+      const pag = document.getElementById('campo-pagamento').value;
+
+      if (!desc || isNaN(val) || !data) return;
+
+      vendas.push({
+        id: Date.now().toString(),
+        descricao: desc,
+        valor: val,
+        data: data,
+        pagamento: pag
+      });
+
+      salvarDadosNuvem();
+      atualizarDashboard();
+      e.target.reset();
+      modalVenda.classList.add('hidden');
+    });
+
+    // Modal de Configuração Cloud
+    const modalConfig = document.getElementById('modal-config');
+    document.getElementById('btn-config-cloud').addEventListener('click', () => {
+      document.getElementById('cfg-bin-id').value = JSONBIN_BIN_ID;
+      document.getElementById('cfg-api-key').value = JSONBIN_API_KEY;
+      modalConfig.classList.remove('hidden');
+    });
+    document.getElementById('btn-fechar-config').addEventListener('click', () => modalConfig.classList.add('hidden'));
+    document.getElementById('btn-cancelar-config').addEventListener('click', () => modalConfig.classList.add('hidden'));
+
+    document.getElementById('btn-salvar-config').addEventListener('click', () => {
+      JSONBIN_BIN_ID = document.getElementById('cfg-bin-id').value.trim();
+      JSONBIN_API_KEY = document.getElementById('cfg-api-key').value.trim();
+
+      localStorage.setItem('jsonbin_bin_id', JSONBIN_BIN_ID);
+      localStorage.setItem('jsonbin_api_key', JSONBIN_API_KEY);
+
+      modalConfig.classList.add('hidden');
+      carregarDadosNuvem();
+    });
+
+    // Botão Recarregar Manual
+    document.getElementById('btn-recarregar').addEventListener('click', () => {
+      carregarDadosNuvem();
+    });
+
+    // Filtros
+    document.getElementById('filtro-busca').addEventListener('input', renderizarTabela);
+    document.getElementById('filtro-pagamento').addEventListener('change', renderizarTabela);
+
+    // Dark Mode
+    document.getElementById('btn-theme-toggle').addEventListener('click', () => {
+      document.documentElement.classList.toggle('dark');
+      if (chartDiarioInstance && chartMensalInstance) {
+        chartDiarioInstance.destroy();
+        chartMensalInstance.destroy();
+        initCharts();
+        atualizarDashboard();
+      }
+    });
+
+    // Inicialização
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      initCharts();
+      setupTargetSelector();
+      carregarDadosNuvem();
+    });
+  </script>
+</body>
+</html>
