@@ -164,18 +164,30 @@
           </div>
         </div>
 
-        <!-- Meta Diária Restante -->
+        <!-- Meta Diária Reajustada Dinamicamente em Tempo Real -->
         <div class="bg-slate-50/70 dark:bg-slate-800/40 rounded-xl p-3.5 sm:p-4 border border-slate-200/60 dark:border-slate-800 flex flex-col justify-between">
           <div>
             <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">
-              <span class="truncate">Meta Diária</span>
-              <i data-lucide="calendar" class="w-3.5 h-3.5 text-slate-400 shrink-0"></i>
+              <span class="truncate">Meta Diária Reajustada</span>
+              <i data-lucide="calculator" class="w-3.5 h-3.5 text-brand-500 shrink-0"></i>
             </div>
             <div id="card-meta-diaria-restante" class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-1">R$ 0,00</div>
+            <!-- Indicador dinâmico de ritmo (se diminuiu ou subiu) -->
+            <div id="container-badge-ritmo" class="mt-1.5">
+              <span id="badge-ritmo-meta" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                Calculando...
+              </span>
+            </div>
           </div>
-          <div class="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-2 flex items-center justify-between pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
-            <span class="truncate">Úteis rest.:</span>
-            <b id="dias-uteis-restantes" class="text-slate-700 dark:text-slate-200 shrink-0">0 dias</b>
+          <div class="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-2 space-y-1 pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+            <div class="flex items-center justify-between">
+              <span class="truncate">Dias úteis restantes:</span>
+              <b id="dias-uteis-restantes" class="text-slate-700 dark:text-slate-200 shrink-0">0 dias</b>
+            </div>
+            <div class="flex items-center justify-between text-[10px]">
+              <span class="text-slate-400">Meta base inicial:</span>
+              <span id="txt-meta-base-inicial" class="font-medium text-slate-600 dark:text-slate-300">R$ 0,00/dia</span>
+            </div>
           </div>
         </div>
 
@@ -252,8 +264,14 @@
           </div>
         </div>
         <div id="card-vendas-hoje" class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-1">R$ 0,00</div>
-        <div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-2 flex items-center gap-1">
-          <span id="card-pedidos-hoje" class="font-bold text-slate-700 dark:text-slate-200">0 pedidos</span> hoje
+        <div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-2 space-y-1">
+          <div class="flex items-center justify-between">
+            <span id="card-pedidos-hoje" class="font-bold text-slate-700 dark:text-slate-200">0 pedidos</span>
+            <span id="badge-meta-hoje" class="text-[10px] font-semibold text-slate-500"></span>
+          </div>
+          <div id="subtexto-meta-hoje" class="text-[10px] text-slate-400 truncate">
+            Meta do dia: R$ 0,00
+          </div>
         </div>
       </div>
 
@@ -538,9 +556,14 @@
     let JSONBIN_BIN_ID = localStorage.getItem('jsonbin_bin_id') || DEFAULT_BIN_ID;
     let JSONBIN_API_KEY = localStorage.getItem('jsonbin_api_key') || DEFAULT_API_KEY;
 
-    // Base de vendas padrão inicial
+    // Base de vendas inicial dinâmica para o ano/mês corrente
+    const agoraInit = new Date();
+    const anoInitStr = agoraInit.getFullYear();
+    const mesInitStr = String(agoraInit.getMonth() + 1).padStart(2, '0');
+    const diaInitStr = String(agoraInit.getDate()).padStart(2, '0');
+
     const dadosIniciais = [
-      { id: '1', descricao: 'Vendas do Dia (Ajuste)', valor: 6176.00, data: '2026-11-03', pagamento: 'A Definir' }
+      { id: '1', descricao: 'Vendas do Dia (Ajuste)', valor: 6176.00, data: `${anoInitStr}-${mesInitStr}-${diaInitStr}`, pagamento: 'A Definir' }
     ];
 
     let vendas = JSON.parse(localStorage.getItem('vendas_app_data')) || dadosIniciais;
@@ -729,6 +752,7 @@
       ]);
     }
 
+    // Calcula dias úteis com suporte a dias decorridos e dias restantes para faturar
     function calcularDiasUteisMes(ano, mesZeroIndexed) {
       const feriados = getFeriadosNacionais(ano);
       const ultimoDiaMes = new Date(ano, mesZeroIndexed + 1, 0).getDate();
@@ -736,8 +760,11 @@
       const ehMesAtual = hoje.getFullYear() === ano && hoje.getMonth() === mesZeroIndexed;
 
       let totalUteis = 0;
-      let uteisDecorridos = 0;
-      let uteisRestantes = 0;
+      let uteisPassados = 0; // Dias úteis anteriores a hoje
+      let ehHojeUtil = false; // Se hoje é dia útil
+      let uteisFuturos = 0;  // Dias úteis estritamente posteriores a hoje
+
+      const hojeDia = hoje.getDate();
 
       for (let dia = 1; dia <= ultimoDiaMes; dia++) {
         const dataAtual = new Date(ano, mesZeroIndexed, dia);
@@ -753,22 +780,29 @@
         if (!ehDomingo && !ehFeriado) {
           totalUteis++;
           if (ehMesAtual) {
-            const dataHojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`;
-            if (dataStr <= dataHojeStr) {
-              uteisDecorridos++;
+            if (dia < hojeDia) {
+              uteisPassados++;
+            } else if (dia === hojeDia) {
+              ehHojeUtil = true;
             } else {
-              uteisRestantes++;
+              uteisFuturos++;
             }
           }
         }
       }
 
-      if (!ehMesAtual) {
-        uteisDecorridos = totalUteis;
-        uteisRestantes = 0;
-      }
+      // Dias disponíveis para trabalhar neste mês (conta com hoje se hoje for dia útil)
+      const diasRestantesParaTrabalhar = ehMesAtual ? ((ehHojeUtil ? 1 : 0) + uteisFuturos) : totalUteis;
+      const uteisDecorridos = ehMesAtual ? (uteisPassados + (ehHojeUtil ? 1 : 0)) : totalUteis;
 
-      return { totalUteis, uteisDecorridos, uteisRestantes };
+      return {
+        totalUteis: Math.max(1, totalUteis),
+        uteisPassados,
+        ehHojeUtil,
+        uteisFuturos,
+        diasRestantesParaTrabalhar: Math.max(1, diasRestantesParaTrabalhar),
+        uteisDecorridos
+      };
     }
 
     function calcularComissao(faturamento) {
@@ -892,9 +926,13 @@
       document.getElementById('card-ticket-medio').textContent = formatMoeda(ticketMedio);
       document.getElementById('card-total-pedidos').textContent = pedidosMes;
 
-      // Dias Úteis
-      const { totalUteis, uteisDecorridos, uteisRestantes } = calcularDiasUteisMes(anoAtual, mesAtualZero);
-      document.getElementById('dias-uteis-restantes').textContent = `${uteisRestantes} dia${uteisRestantes !== 1 ? 's' : ''}`;
+      // Dias Úteis e Metas Dinâmicas
+      const { totalUteis, uteisPassados, ehHojeUtil, uteisFuturos, diasRestantesParaTrabalhar, uteisDecorridos } = calcularDiasUteisMes(anoAtual, mesAtualZero);
+
+      // Meta Base Inicial (Fixa teórica do início do mês: Alvo ÷ Total de dias úteis)
+      const metaBaseInicial = targetAtivo / totalUteis;
+      document.getElementById('txt-meta-base-inicial').textContent = formatMoeda(metaBaseInicial) + '/dia';
+      document.getElementById('dias-uteis-restantes').textContent = `${diasRestantesParaTrabalhar} dia${diasRestantesParaTrabalhar !== 1 ? 's' : ''}`;
       document.getElementById('txt-dias-uteis-resumo').textContent = `${uteisDecorridos} de ${totalUteis} dias úteis`;
 
       // Comissões & Líquido
@@ -914,18 +952,74 @@
         document.getElementById('card-falta-proximo-salto').textContent = "Meta Máxima";
       }
 
-      // Meta Alvo e Meta Diária Restante
+      // Meta Alvo e Falta Faturar
       document.getElementById('card-alvo-valor').textContent = formatMoeda(targetAtivo);
       const faltaFaturar = Math.max(0, targetAtivo - totalMes);
       document.getElementById('card-falta-faturar').textContent = formatMoeda(faltaFaturar);
 
+      // ========================================================
+      // CÁLCULO DINÂMICO DA META DIÁRIA EM TEMPO REAL
+      // ========================================================
+      const cardMetaDiaria = document.getElementById('card-meta-diaria-restante');
+      const badgeRitmo = document.getElementById('badge-ritmo-meta');
+      const badgeMetaHoje = document.getElementById('badge-meta-hoje');
+      const subtextoMetaHoje = document.getElementById('subtexto-meta-hoje');
+
       if (faltaFaturar <= 0) {
-        document.getElementById('card-meta-diaria-restante').textContent = "Meta Batida! 🎉";
-        document.getElementById('card-meta-diaria-restante').className = "text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1";
+        cardMetaDiaria.textContent = "Meta Batida! 🎉";
+        cardMetaDiaria.className = "text-lg sm:text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1";
+        if (badgeRitmo) {
+          badgeRitmo.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300";
+          badgeRitmo.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> Alvo alcançado no mês!`;
+        }
+        if (badgeMetaHoje) {
+          badgeMetaHoje.className = "text-[10px] font-bold text-emerald-600 dark:text-emerald-400";
+          badgeMetaHoje.textContent = "✓ Meta batida!";
+        }
+        if (subtextoMetaHoje) {
+          subtextoMetaHoje.textContent = "Meta mensal já conquistada!";
+        }
       } else {
-        const metaDiaria = uteisRestantes > 0 ? (faltaFaturar / uteisRestantes) : faltaFaturar;
-        document.getElementById('card-meta-diaria-restante').textContent = formatMoeda(metaDiaria);
-        document.getElementById('card-meta-diaria-restante').className = "text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-1";
+        // Meta diária reajustada: O que falta faturar dividido pelos dias úteis restantes
+        const metaDiariaDinamica = faltaFaturar / diasRestantesParaTrabalhar;
+        cardMetaDiaria.textContent = formatMoeda(metaDiariaDinamica);
+        cardMetaDiaria.className = "text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-1";
+
+        // Comparativo com a Meta Base Inicial (R$ X/dia)
+        // Se ela vendeu mais, a meta diária restante é MENOR que a meta base inicial!
+        // Se ela vendeu menos, a meta diária restante é MAIOR para compensar!
+        const diferenca = metaDiariaDinamica - metaBaseInicial;
+
+        if (badgeRitmo) {
+          if (diferenca < -10) {
+            // Vendeu mais: Meta diária diminuiu (aliviou!)
+            const valorAlivio = Math.abs(diferenca);
+            badgeRitmo.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300";
+            badgeRitmo.innerHTML = `<i data-lucide="trending-down" class="w-3 h-3"></i> Caiu ${formatMoeda(valorAlivio)}/dia (Meta aliviada!)`;
+          } else if (diferenca > 10) {
+            // Vendeu menos: Meta diária aumentou (precisa acelerar!)
+            badgeRitmo.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300";
+            badgeRitmo.innerHTML = `<i data-lucide="trending-up" class="w-3 h-3"></i> Subiu ${formatMoeda(diferenca)}/dia (Acelerar ritmo)`;
+          } else {
+            // No ritmo exato
+            badgeRitmo.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
+            badgeRitmo.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> No ritmo previsto da meta`;
+          }
+        }
+
+        // Atualização em tempo real do card "Vendas Hoje" com base na meta diária
+        if (badgeMetaHoje && subtextoMetaHoje) {
+          if (totalHoje >= metaDiariaDinamica && metaDiariaDinamica > 0) {
+            badgeMetaHoje.className = "text-[10px] font-bold text-emerald-600 dark:text-emerald-400";
+            badgeMetaHoje.textContent = "✓ Meta de hoje batida!";
+            subtextoMetaHoje.textContent = `Superou a meta em ${formatMoeda(totalHoje - metaDiariaDinamica)}`;
+          } else if (metaDiariaDinamica > 0) {
+            const percHoje = Math.min(100, (totalHoje / metaDiariaDinamica) * 100).toFixed(0);
+            badgeMetaHoje.className = "text-[10px] font-bold text-brand-600 dark:text-brand-400";
+            badgeMetaHoje.textContent = `${percHoje}% da meta diária`;
+            subtextoMetaHoje.textContent = `Meta: ${formatMoeda(metaDiariaDinamica)} (Falta ${formatMoeda(metaDiariaDinamica - totalHoje)})`;
+          }
+        }
       }
 
       // Barra de Progresso
@@ -945,6 +1039,7 @@
 
       atualizarGraficos(mesAtualChave);
       renderizarTabela();
+      lucide.createIcons();
     }
 
     function atualizarGraficos(mesAtualChave) {
