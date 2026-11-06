@@ -104,10 +104,11 @@
           <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
         </button>
 
-        <!-- Botão Nova Venda (Desktop) -->
+        <!-- Botão Nova Venda (Desktop) com atalho de teclado [N] -->
         <button id="btn-nova-venda" class="hidden sm:inline-flex items-center gap-2 px-3.5 py-1.5 text-xs sm:text-sm font-semibold rounded-lg bg-gradient-to-r from-brand-600 to-violet-600 hover:from-brand-700 hover:to-violet-700 text-white shadow-sm shadow-brand-600/30 active:scale-95 transition-all">
           <i data-lucide="plus" class="w-4 h-4"></i>
           <span>Nova Venda</span>
+          <kbd class="hidden md:inline-block ml-1 px-1.5 py-0.5 text-[10px] bg-white/20 rounded font-mono uppercase font-normal">N</kbd>
         </button>
       </div>
     </div>
@@ -327,18 +328,26 @@
 
     <!-- Histórico de Lançamentos: Cartões no Celular + Tabela no Desktop -->
     <section class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden mb-16 sm:mb-0">
-      <div class="p-3.5 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="p-3.5 sm:p-5 border-b border-slate-200/80 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
         <div>
           <h3 class="text-sm sm:text-base font-bold text-slate-900 dark:text-white">Histórico de Lançamentos</h3>
           <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">Lista completa das vendas salvas na nuvem</p>
         </div>
 
-        <!-- Filtros responsivos (Full-width no mobile) -->
-        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-          <div class="relative flex-1 sm:w-60">
+        <!-- Filtros responsivos (Busca, Mês, Pagamento, Exportar CSV) -->
+        <div class="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full lg:w-auto">
+          <!-- Campo de Busca com Atalho '/' -->
+          <div class="relative flex-1 sm:w-56">
             <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-            <input type="text" id="filtro-busca" placeholder="Buscar venda..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <input type="text" id="filtro-busca" placeholder="Buscar venda... (ou /)" class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
           </div>
+
+          <!-- Filtro por Período / Mês -->
+          <select id="filtro-mes" class="text-xs py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="todos">Todos os Meses</option>
+          </select>
+
+          <!-- Filtro por Forma de Pagamento -->
           <select id="filtro-pagamento" class="text-xs py-2 px-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
             <option value="todos">Todos Pagamentos</option>
             <option value="Pix">Pix</option>
@@ -347,6 +356,12 @@
             <option value="Dinheiro">Dinheiro</option>
             <option value="A Definir">A Definir</option>
           </select>
+
+          <!-- Botão Exportar Excel/CSV -->
+          <button id="btn-exportar-csv" title="Exportar dados filtrados para Excel/CSV" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all">
+            <i data-lucide="download" class="w-4 h-4 text-emerald-600 dark:text-emerald-400"></i>
+            <span>Exportar CSV</span>
+          </button>
         </div>
       </div>
 
@@ -355,7 +370,7 @@
         <!-- Injetado dinamicamente via JS -->
       </div>
 
-      <!-- VISÃO DESKTOP: Tabela Tradicional -->
+      <!-- VISÃO DESKTOP: Tabela Tradicional com Ações de Edição e Exclusão -->
       <div class="hidden sm:block overflow-x-auto custom-scrollbar">
         <table class="w-full text-left border-collapse text-xs sm:text-sm">
           <thead>
@@ -372,6 +387,18 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Totalizador Dinâmico no Rodapé da Tabela -->
+      <div id="tabela-totalizador" class="px-4 py-3 bg-slate-50/80 dark:bg-slate-800/40 border-t border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+        <div class="text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+          <i data-lucide="layers" class="w-4 h-4 text-brand-500"></i>
+          <span>Exibindo <b id="total-registros-filtrados" class="text-slate-800 dark:text-slate-200 font-bold">0</b> lançamentos</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-slate-500 dark:text-slate-400">Total filtrado:</span>
+          <span id="soma-valor-filtrado" class="font-extrabold text-sm text-slate-900 dark:text-white bg-white dark:bg-slate-900 px-3 py-1 rounded-lg border border-slate-200/70 dark:border-slate-700 shadow-sm">R$ 0,00</span>
+        </div>
+      </div>
     </section>
   </main>
 
@@ -380,7 +407,7 @@
     <i data-lucide="plus" class="w-7 h-7"></i>
   </button>
 
-  <!-- Modal Configuração JSONBin (Bottom Sheet no Celular) -->
+  <!-- Modal Configuração JSONBin (Bottom Sheet no Celular / Centralizado no PC) -->
   <div id="modal-config" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
     <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-5 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
@@ -394,7 +421,7 @@
       </div>
 
       <p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-        Insira suas credenciais do <b>JSONBin.io</b> para sincronizar e abrir os mesmos dados no celular ou em qualquer outro aparelho.
+        Insira suas credenciais do <b>JSONBin.io</b> para sincronizar e abrir os mesmos dados no celular ou em qualquer outro computador.
       </p>
 
       <div class="space-y-3">
@@ -415,15 +442,15 @@
     </div>
   </div>
 
-  <!-- Modal Nova Venda (Bottom Sheet no Celular) -->
+  <!-- Modal Cadastrar / Editar Venda -->
   <div id="modal-venda" class="fixed inset-0 z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
     <div class="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-5 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
         <div class="flex items-center gap-2">
           <div class="p-1 rounded-lg bg-brand-50 dark:bg-brand-950/60 text-brand-600">
-            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+            <i data-lucide="plus-circle" id="modal-venda-icone" class="w-5 h-5"></i>
           </div>
-          <h3 class="text-base font-bold text-slate-900 dark:text-white">Cadastrar Nova Venda</h3>
+          <h3 id="modal-venda-titulo" class="text-base font-bold text-slate-900 dark:text-white">Cadastrar Nova Venda</h3>
         </div>
         <button id="btn-fechar-modal" class="p-2 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
           <i data-lucide="x" class="w-5 h-5"></i>
@@ -431,6 +458,9 @@
       </div>
 
       <form id="form-venda" class="space-y-4">
+        <!-- Campo ID Oculto para Edição -->
+        <input type="hidden" id="campo-venda-id" value="">
+
         <div>
           <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Descrição / Produto</label>
           <input type="text" id="campo-descricao" required placeholder="Ex: Vestido Floral ou Vendas do Dia" class="w-full px-3 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500">
@@ -460,11 +490,34 @@
 
         <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
           <button type="button" id="btn-cancelar-modal" class="w-1/2 sm:w-auto px-4 py-2.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-center">Cancelar</button>
-          <button type="submit" class="w-1/2 sm:w-auto px-5 py-2.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-brand-600 to-violet-600 hover:from-brand-700 hover:to-violet-700 text-white shadow-sm shadow-brand-600/30 text-center">Salvar Venda</button>
+          <button type="submit" id="btn-submit-venda" class="w-1/2 sm:w-auto px-5 py-2.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-brand-600 to-violet-600 hover:from-brand-700 hover:to-violet-700 text-white shadow-sm shadow-brand-600/30 text-center">Salvar Venda</button>
         </div>
       </form>
     </div>
   </div>
+
+  <!-- Modal Confirmação de Exclusão (Substitui confirm feio) -->
+  <div id="modal-confirmacao" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm transition-opacity">
+    <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-sm w-full p-5 space-y-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-950/60 text-red-600 flex items-center justify-center shrink-0">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white">Excluir Lançamento</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Essa ação não pode ser desfeita.</p>
+        </div>
+      </div>
+      <p id="msg-confirmacao" class="text-xs text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800 leading-relaxed font-medium"></p>
+      <div class="flex items-center justify-end gap-2 pt-1">
+        <button type="button" id="btn-cancelar-exclusao" class="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">Cancelar</button>
+        <button type="button" id="btn-confirmar-exclusao" class="px-4 py-2 text-xs font-semibold rounded-xl bg-red-600 hover:bg-red-700 text-white shadow-sm shadow-red-600/30">Excluir Venda</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Container de Notificações Toast Modernas -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none max-w-sm w-full sm:w-auto px-4 sm:px-0"></div>
 
   <script>
     // ==========================================
@@ -479,6 +532,7 @@
     const SALARIO_LIQUIDO = 1499.42; // Base líquida na carteira
 
     let targetAtivo = 110000;
+    let vendaParaExcluirId = null;
 
     // Recupera chaves salvas localmente se existirem
     let JSONBIN_BIN_ID = localStorage.getItem('jsonbin_bin_id') || DEFAULT_BIN_ID;
@@ -492,7 +546,58 @@
     let vendas = JSON.parse(localStorage.getItem('vendas_app_data')) || dadosIniciais;
 
     // ==========================================
-    // 2. SINCRONIZAÇÃO COM JSONBIN.IO (NUVEM)
+    // 2. SISTEMA DE TOASTS MODERNOS
+    // ==========================================
+    function showToast(mensagem, tipo = 'success') {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      toast.className = 'pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-2xl shadow-xl border text-xs font-semibold backdrop-blur-md transition-all duration-300 transform translate-y-3 opacity-0';
+
+      let iconName = 'check-circle-2';
+      if (tipo === 'success') {
+        toast.className += ' bg-emerald-50/95 dark:bg-emerald-950/90 text-emerald-900 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800';
+        iconName = 'check-circle-2';
+      } else if (tipo === 'error') {
+        toast.className += ' bg-rose-50/95 dark:bg-rose-950/90 text-rose-900 dark:text-rose-200 border-rose-200 dark:border-rose-800';
+        iconName = 'alert-octagon';
+      } else {
+        toast.className += ' bg-slate-900/95 dark:bg-slate-800/95 text-white border-slate-700';
+        iconName = 'info';
+      }
+
+      toast.innerHTML = `
+        <i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i>
+        <span class="flex-1">${mensagem}</span>
+        <button type="button" class="text-current opacity-60 hover:opacity-100 p-0.5 ml-1">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      `;
+
+      const btnFechar = toast.querySelector('button');
+      btnFechar.addEventListener('click', () => {
+        toast.classList.add('opacity-0', 'translate-y-3');
+        setTimeout(() => toast.remove(), 300);
+      });
+
+      container.appendChild(toast);
+      lucide.createIcons({ root: toast });
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-3', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        if (toast.parentElement) {
+          toast.classList.add('opacity-0', 'translate-y-3');
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 3500);
+    }
+
+    // ==========================================
+    // 3. SINCRONIZAÇÃO COM JSONBIN.IO (NUVEM)
     // ==========================================
     function setSyncStatus(tipo, texto) {
       const el = document.getElementById('sync-status');
@@ -505,13 +610,14 @@
         el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> <span class="hidden xs:inline">${texto}</span>`;
       } else {
         el.className = "inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 shrink-0";
-        el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> ${texto}`;
+        el.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> <span class="hidden xs:inline">${texto}</span>`;
       }
     }
 
-    async function carregarDadosNuvem() {
+    async function carregarDadosNuvem(mostrarToastSucesso = false) {
       if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) {
         setSyncStatus('offline', 'Modo Local');
+        popularFiltroMeses();
         atualizarDashboard();
         return;
       }
@@ -532,12 +638,16 @@
           vendas = resultado.record;
           localStorage.setItem('vendas_app_data', JSON.stringify(vendas));
           setSyncStatus('online', 'Nuvem Conectada');
+          popularFiltroMeses();
           atualizarDashboard();
+          if (mostrarToastSucesso) showToast('Dados atualizados da nuvem com sucesso!', 'success');
         }
       } catch (err) {
         console.warn('Erro ao ler da nuvem:', err);
         setSyncStatus('offline', 'Falha ao sincronizar');
+        popularFiltroMeses();
         atualizarDashboard();
+        if (mostrarToastSucesso) showToast('Não foi possível conectar à nuvem. Usando dados locais.', 'error');
       }
     }
 
@@ -565,11 +675,12 @@
       } catch (err) {
         console.error('Erro ao salvar na nuvem:', err);
         setSyncStatus('offline', 'Erro ao salvar online');
+        showToast('Erro ao sincronizar com a nuvem. Salvo em cache local.', 'error');
       }
     }
 
     // ==========================================
-    // 3. REGRAS DE NEGÓCIO (CALENDÁRIO & METAS)
+    // 4. REGRAS DE NEGÓCIO (CALENDÁRIO & METAS)
     // ==========================================
     function getFeriadosNacionais(ano) {
       const a = ano % 19;
@@ -673,7 +784,7 @@
     }
 
     // ==========================================
-    // 4. ATUALIZAÇÃO DA TELA E DOS GRÁFICOS
+    // 5. ATUALIZAÇÃO DA TELA E DOS GRÁFICOS
     // ==========================================
     let chartDiarioInstance = null;
     let chartMensalInstance = null;
@@ -713,6 +824,39 @@
           }
         }
       });
+    }
+
+    function popularFiltroMeses() {
+      const select = document.getElementById('filtro-mes');
+      if (!select) return;
+
+      const mesesSet = new Set();
+      const hoje = new Date();
+      const mesAtualStr = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}`;
+      mesesSet.add(mesAtualStr);
+
+      vendas.forEach(v => {
+        if (v.data && v.data.length >= 7) {
+          mesesSet.add(v.data.substring(0, 7));
+        }
+      });
+
+      const mesesOrdenados = Array.from(mesesSet).sort().reverse();
+      const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+      const valorSelecionado = select.value || 'todos';
+      let html = '<option value="todos">Todos os Meses</option>';
+
+      mesesOrdenados.forEach(ym => {
+        const [ano, mes] = ym.split('-');
+        const nomeMes = nomesMeses[parseInt(mes, 10) - 1] || mes;
+        html += `<option value="${ym}">${nomeMes} / ${ano}</option>`;
+      });
+
+      select.innerHTML = html;
+      if (Array.from(select.options).some(o => o.value === valorSelecionado)) {
+        select.value = valorSelecionado;
+      }
     }
 
     function atualizarDashboard() {
@@ -863,14 +1007,21 @@
     function renderizarTabela() {
       const corpoDesktop = document.getElementById('tabela-vendas-corpo');
       const containerMobile = document.getElementById('cards-vendas-mobile');
-      const busca = document.getElementById('filtro-busca').value.toLowerCase();
+      const busca = (document.getElementById('filtro-busca').value || '').toLowerCase();
       const pagFiltro = document.getElementById('filtro-pagamento').value;
+      const mesFiltro = document.getElementById('filtro-mes') ? document.getElementById('filtro-mes').value : 'todos';
 
       const vendasFiltradas = vendas.filter(v => {
         const matchBusca = (v.descricao || '').toLowerCase().includes(busca);
         const matchPag = pagFiltro === 'todos' || v.pagamento === pagFiltro;
-        return matchBusca && matchPag;
+        const matchMes = mesFiltro === 'todos' || (v.data && v.data.startsWith(mesFiltro));
+        return matchBusca && matchPag && matchMes;
       }).sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+
+      // Atualiza Totalizadores no Rodapé
+      const totalSoma = vendasFiltradas.reduce((acc, curr) => acc + (parseFloat(curr.valor) || 0), 0);
+      document.getElementById('total-registros-filtrados').textContent = vendasFiltradas.length;
+      document.getElementById('soma-valor-filtrado').textContent = formatMoeda(totalSoma);
 
       if (vendasFiltradas.length === 0) {
         const emptyMsg = `
@@ -883,7 +1034,7 @@
         return;
       }
 
-      // Renderiza visão Desktop (Tabela)
+      // Renderiza visão Desktop (Tabela) com botões Editar e Excluir
       corpoDesktop.innerHTML = vendasFiltradas.map(v => {
         const partesData = (v.data || '').split('-');
         const dataFormatada = partesData.length === 3 ? `${partesData[2]}/${partesData[1]}/${partesData[0]}` : v.data;
@@ -898,15 +1049,20 @@
             </td>
             <td class="py-3 px-4 text-right font-bold text-slate-900 dark:text-white">${formatMoeda(v.valor)}</td>
             <td class="py-3 px-4 text-center">
-              <button onclick="removerVenda('${v.id}')" title="Excluir Venda" class="p-1 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors">
-                <i data-lucide="trash-2" class="w-4 h-4"></i>
-              </button>
+              <div class="inline-flex items-center gap-1">
+                <button onclick="editarVenda('${v.id}')" title="Editar Lançamento" class="p-1.5 rounded-lg text-slate-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-brand-950/40 transition-colors">
+                  <i data-lucide="edit-3" class="w-4 h-4"></i>
+                </button>
+                <button onclick="solicitarExclusaoVenda('${v.id}')" title="Excluir Venda" class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
             </td>
           </tr>
         `;
       }).join('');
 
-      // Renderiza visão Mobile (Cards touch-friendly)
+      // Renderiza visão Mobile (Cards touch-friendly com Editar e Excluir)
       containerMobile.innerHTML = vendasFiltradas.map(v => {
         const partesData = (v.data || '').split('-');
         const dataFormatada = partesData.length === 3 ? `${partesData[2]}/${partesData[1]}/${partesData[0]}` : v.data;
@@ -925,9 +1081,12 @@
               </div>
             </div>
 
-            <div class="flex items-center gap-2 shrink-0">
-              <span class="text-sm font-bold text-slate-900 dark:text-white">${formatMoeda(v.valor)}</span>
-              <button onclick="removerVenda('${v.id}')" title="Excluir Venda" class="p-2 -mr-1.5 rounded-lg text-slate-400 hover:text-red-500 active:bg-red-50 dark:active:bg-red-950/40 transition-colors">
+            <div class="flex items-center gap-1 shrink-0">
+              <span class="text-sm font-bold text-slate-900 dark:text-white mr-1">${formatMoeda(v.valor)}</span>
+              <button onclick="editarVenda('${v.id}')" title="Editar Lançamento" class="p-2 rounded-lg text-slate-400 hover:text-brand-600 active:bg-brand-50 dark:active:bg-brand-950/40 transition-colors">
+                <i data-lucide="edit-3" class="w-4 h-4"></i>
+              </button>
+              <button onclick="solicitarExclusaoVenda('${v.id}')" title="Excluir Venda" class="p-2 -mr-1 rounded-lg text-slate-400 hover:text-red-500 active:bg-red-50 dark:active:bg-red-950/40 transition-colors">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
               </button>
             </div>
@@ -938,16 +1097,110 @@
       lucide.createIcons();
     }
 
-    window.removerVenda = function(id) {
-      if (confirm('Deseja realmente remover esta venda?')) {
-        vendas = vendas.filter(v => v.id !== id);
-        salvarDadosNuvem();
-        atualizarDashboard();
-      }
+    // ==========================================
+    // 6. EDIÇÃO E EXCLUSÃO DE VENDAS
+    // ==========================================
+    window.editarVenda = function(id) {
+      const v = vendas.find(item => item.id === id);
+      if (!v) return;
+
+      document.getElementById('campo-venda-id').value = v.id;
+      document.getElementById('campo-descricao').value = v.descricao || '';
+      document.getElementById('campo-valor').value = v.valor || '';
+      document.getElementById('campo-data').value = v.data || new Date().toISOString().split('T')[0];
+      document.getElementById('campo-pagamento').value = v.pagamento || 'Pix';
+
+      document.getElementById('modal-venda-titulo').textContent = 'Editar Lançamento';
+      document.getElementById('btn-submit-venda').textContent = 'Salvar Alterações';
+
+      modalVenda.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
     };
 
+    window.solicitarExclusaoVenda = function(id) {
+      const v = vendas.find(item => item.id === id);
+      if (!v) return;
+
+      vendaParaExcluirId = id;
+      const modalConf = document.getElementById('modal-confirmacao');
+      const msgEl = document.getElementById('msg-confirmacao');
+      msgEl.innerHTML = `Deseja realmente remover <b>"${v.descricao || 'esta venda'}"</b> de <b>${formatMoeda(v.valor)}</b>?`;
+      modalConf.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden');
+    };
+
+    function fecharModalConfirmacao() {
+      const modalConf = document.getElementById('modal-confirmacao');
+      modalConf.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden');
+      vendaParaExcluirId = null;
+    }
+
+    document.getElementById('btn-confirmar-exclusao').addEventListener('click', () => {
+      if (vendaParaExcluirId) {
+        vendas = vendas.filter(v => v.id !== vendaParaExcluirId);
+        salvarDadosNuvem();
+        popularFiltroMeses();
+        atualizarDashboard();
+        showToast('Venda removida com sucesso.', 'info');
+      }
+      fecharModalConfirmacao();
+    });
+
+    document.getElementById('btn-cancelar-exclusao').addEventListener('click', fecharModalConfirmacao);
+    document.getElementById('modal-confirmacao').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('modal-confirmacao')) fecharModalConfirmacao();
+    });
+
     // ==========================================
-    // 5. EVENTOS, MODAIS E CONTROLES
+    // 7. EXPORTAÇÃO PARA EXCEL / CSV
+    // ==========================================
+    function exportarCSV() {
+      const busca = (document.getElementById('filtro-busca').value || '').toLowerCase();
+      const pagFiltro = document.getElementById('filtro-pagamento').value;
+      const mesFiltro = document.getElementById('filtro-mes') ? document.getElementById('filtro-mes').value : 'todos';
+
+      const vendasFiltradas = vendas.filter(v => {
+        const matchBusca = (v.descricao || '').toLowerCase().includes(busca);
+        const matchPag = pagFiltro === 'todos' || v.pagamento === pagFiltro;
+        const matchMes = mesFiltro === 'todos' || (v.data && v.data.startsWith(mesFiltro));
+        return matchBusca && matchPag && matchMes;
+      }).sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
+
+      if (vendasFiltradas.length === 0) {
+        showToast('Nenhuma venda encontrada para exportar.', 'error');
+        return;
+      }
+
+      // Padrão CSV com delimitador ';' e BOM UTF-8 para compatibilidade perfeita com Excel em português
+      let csvContent = '\uFEFFData;Descrição;Forma de Pagamento;Valor (R$)\r\n';
+      vendasFiltradas.forEach(v => {
+        const partes = (v.data || '').split('-');
+        const dataBr = partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : v.data;
+        const desc = `"${(v.descricao || '').replace(/"/g, '""')}"`;
+        const pag = `"${(v.pagamento || 'A Definir').replace(/"/g, '""')}"`;
+        const val = (parseFloat(v.valor) || 0).toFixed(2).replace('.', ',');
+        csvContent += `${dataBr};${desc};${pag};${val}\r\n`;
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      const hoje = new Date().toISOString().split('T')[0];
+      link.setAttribute('href', url);
+      link.setAttribute('download', `vendas_bruna_${hoje}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showToast(`Planilha gerada com sucesso (${vendasFiltradas.length} vendas)!`, 'success');
+    }
+
+    document.getElementById('btn-exportar-csv').addEventListener('click', exportarCSV);
+
+    // ==========================================
+    // 8. EVENTOS, MODAIS E ATALHOS DE TECLADO
     // ==========================================
     function setupTargetSelector() {
       const btns = document.querySelectorAll('.target-selector-btn');
@@ -972,10 +1225,17 @@
     // Modal Nova Venda (Desktop & Mobile FAB)
     const modalVenda = document.getElementById('modal-venda');
     const abrirModalVenda = () => {
+      document.getElementById('campo-venda-id').value = '';
+      document.getElementById('form-venda').reset();
       document.getElementById('campo-data').value = new Date().toISOString().split('T')[0];
+      document.getElementById('modal-venda-titulo').textContent = 'Cadastrar Nova Venda';
+      document.getElementById('btn-submit-venda').textContent = 'Salvar Venda';
+
       modalVenda.classList.remove('hidden');
       document.body.classList.add('overflow-hidden');
+      setTimeout(() => document.getElementById('campo-descricao').focus(), 100);
     };
+
     const fecharModalVenda = () => {
       modalVenda.classList.add('hidden');
       document.body.classList.remove('overflow-hidden');
@@ -992,6 +1252,7 @@
 
     document.getElementById('form-venda').addEventListener('submit', (e) => {
       e.preventDefault();
+      const idEdicao = document.getElementById('campo-venda-id').value;
       const desc = document.getElementById('campo-descricao').value.trim();
       const val = parseFloat(document.getElementById('campo-valor').value);
       const data = document.getElementById('campo-data').value;
@@ -999,15 +1260,25 @@
 
       if (!desc || isNaN(val) || !data) return;
 
-      vendas.push({
-        id: Date.now().toString(),
-        descricao: desc,
-        valor: val,
-        data: data,
-        pagamento: pag
-      });
+      if (idEdicao) {
+        const idx = vendas.findIndex(v => v.id === idEdicao);
+        if (idx !== -1) {
+          vendas[idx] = { id: idEdicao, descricao: desc, valor: val, data: data, pagamento: pag };
+          showToast('Venda atualizada com sucesso!', 'success');
+        }
+      } else {
+        vendas.push({
+          id: Date.now().toString(),
+          descricao: desc,
+          valor: val,
+          data: data,
+          pagamento: pag
+        });
+        showToast('Venda cadastrada com sucesso!', 'success');
+      }
 
       salvarDadosNuvem();
+      popularFiltroMeses();
       atualizarDashboard();
       e.target.reset();
       fecharModalVenda();
@@ -1042,17 +1313,52 @@
       localStorage.setItem('jsonbin_api_key', JSONBIN_API_KEY);
 
       fecharModalConfig();
-      carregarDadosNuvem();
+      showToast('Configurações da nuvem salvas.', 'info');
+      carregarDadosNuvem(true);
     });
 
     // Botão Recarregar Manual
     document.getElementById('btn-recarregar').addEventListener('click', () => {
-      carregarDadosNuvem();
+      carregarDadosNuvem(true);
     });
 
-    // Filtros
+    // Filtros de Tabela
     document.getElementById('filtro-busca').addEventListener('input', renderizarTabela);
     document.getElementById('filtro-pagamento').addEventListener('change', renderizarTabela);
+    document.getElementById('filtro-mes').addEventListener('change', renderizarTabela);
+
+    // Atalhos de Teclado no PC (N, Esc, /)
+    document.addEventListener('keydown', (e) => {
+      const tag = (e.target.tagName || '').toLowerCase();
+      const isInput = tag === 'input' || tag === 'textarea' || tag === 'select';
+
+      // ESC: Fecha qualquer modal
+      if (e.key === 'Escape') {
+        fecharModalVenda();
+        fecharModalConfig();
+        fecharModalConfirmacao();
+        return;
+      }
+
+      // Se estiver digitando em um campo de texto, não dispara atalhos de letra
+      if (isInput) return;
+
+      // N: Abre modal de Nova Venda
+      if (e.key === 'n' || e.key === 'N') {
+        e.preventDefault();
+        abrirModalVenda();
+      }
+
+      // /: Foca na busca de vendas
+      if (e.key === '/') {
+        e.preventDefault();
+        const campoBusca = document.getElementById('filtro-busca');
+        if (campoBusca) {
+          campoBusca.focus();
+          campoBusca.select();
+        }
+      }
+    });
 
     // Dark Mode
     document.getElementById('btn-theme-toggle').addEventListener('click', () => {
@@ -1070,6 +1376,7 @@
       lucide.createIcons();
       initCharts();
       setupTargetSelector();
+      popularFiltroMeses();
       carregarDadosNuvem();
     });
   </script>
