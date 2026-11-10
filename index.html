@@ -78,7 +78,12 @@
         </div>
         <div class="min-w-0">
           <div class="flex items-center gap-1.5 sm:gap-2">
-            <h1 class="text-sm sm:text-lg font-bold leading-tight truncate">Bruna Jheymes</h1>
+            <!-- Nome do Usuário Editável com Persistência Local -->
+            <div id="container-usuario-nome" class="flex items-center gap-1.5 group cursor-pointer" title="Clique para editar seu nome">
+              <h1 id="titulo-usuario-nome" class="text-sm sm:text-lg font-bold leading-tight truncate max-w-[120px] sm:max-w-[220px]">Minhas Vendas</h1>
+              <i data-lucide="pencil" class="w-3 h-3 text-slate-400 group-hover:text-brand-500 transition-colors shrink-0"></i>
+            </div>
+            <input type="text" id="input-usuario-nome" class="hidden text-xs sm:text-base font-bold leading-tight px-2 py-0.5 rounded-lg border border-brand-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none max-w-[140px] sm:max-w-[220px] shadow-sm" placeholder="Seu Nome">
             <!-- Status de sincronização online -->
             <span id="sync-status" class="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 shrink-0">
               <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
@@ -115,6 +120,36 @@
   </header>
 
   <main class="flex-1 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 w-full space-y-4 sm:space-y-6">
+
+    <!-- Barra de Controle: Data de Referência das Estatísticas -->
+    <section class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3.5 sm:px-5 sm:py-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="p-2.5 rounded-xl bg-gradient-to-tr from-brand-500/10 to-violet-500/10 text-brand-600 dark:text-brand-400 shrink-0">
+          <i data-lucide="calendar" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h2 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">Data de Referência das Estatísticas:</h2>
+            <span id="badge-referencia-status" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+              Hoje (Tempo Real)
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            Exibindo métricas, faturamento acumulado e metas diárias até a data selecionada
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 w-full sm:w-auto">
+        <div class="relative flex-1 sm:w-auto">
+          <input type="date" id="campo-data-referencia" class="w-full sm:w-44 px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 cursor-pointer">
+        </div>
+        <button id="btn-redefinir-data-hoje" title="Voltar para a data de hoje" class="px-3.5 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all shrink-0 flex items-center gap-1.5 shadow-sm">
+          <i data-lucide="calendar-check-2" class="w-3.5 h-3.5 text-brand-500"></i>
+          <span>Hoje</span>
+        </button>
+      </div>
+    </section>
 
     <!-- Seção de Metas & Remuneração -->
     <section class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 shadow-sm space-y-4 sm:space-y-5">
@@ -258,7 +293,7 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
       <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-5 shadow-sm flex flex-col justify-between">
         <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">
-          <span class="truncate">Vendas Hoje</span>
+          <span id="lbl-vendas-hoje" class="truncate">Vendas Hoje</span>
           <div class="p-1 sm:p-1.5 rounded-lg bg-pink-50 dark:bg-pink-950/60 text-brand-600 dark:text-brand-400 shrink-0">
             <i data-lucide="calendar-check" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
           </div>
@@ -277,13 +312,13 @@
 
       <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-5 shadow-sm flex flex-col justify-between">
         <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold mb-1">
-          <span class="truncate">Faturamento Mês</span>
+          <span id="lbl-faturamento-mes" class="truncate">Faturamento Mês</span>
           <div class="p-1 sm:p-1.5 rounded-lg bg-violet-50 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400 shrink-0">
             <i data-lucide="badge-dollar-sign" class="w-3.5 h-3.5 sm:w-4 sm:h-4"></i>
           </div>
         </div>
         <div id="card-vendas-mes" class="text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-1">R$ 0,00</div>
-        <div class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-2 truncate">
+        <div id="subtexto-faturamento-mes" class="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-2 truncate">
           Total acumulado no mês
         </div>
       </div>
@@ -374,6 +409,12 @@
             <option value="Dinheiro">Dinheiro</option>
             <option value="A Definir">A Definir</option>
           </select>
+
+          <!-- Filtro Opcional: Limitar Histórico até a Data Selecionada -->
+          <label class="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 cursor-pointer select-none px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors shrink-0" title="Exibe no histórico apenas os lançamentos até a data de referência selecionada acima">
+            <input type="checkbox" id="filtro-limitar-data-ref" class="rounded text-brand-600 focus:ring-brand-500">
+            <span class="truncate">Até a data selecionada</span>
+          </label>
 
           <!-- Botão Exportar Excel/CSV -->
           <button id="btn-exportar-csv" title="Exportar dados filtrados para Excel/CSV" class="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all">
@@ -555,6 +596,62 @@
     // Recupera chaves salvas localmente se existirem
     let JSONBIN_BIN_ID = localStorage.getItem('jsonbin_bin_id') || DEFAULT_BIN_ID;
     let JSONBIN_API_KEY = localStorage.getItem('jsonbin_api_key') || DEFAULT_API_KEY;
+
+    // Gerenciamento do Nome do Usuário no Cache Local (localStorage)
+    const STORAGE_KEY_NOME = 'vendas_app_usuario_nome';
+    let usuarioNome = localStorage.getItem(STORAGE_KEY_NOME) || 'Minhas Vendas';
+
+    function atualizarNomeUsuarioUI(nome) {
+      usuarioNome = (nome || '').trim() || 'Minhas Vendas';
+      const tituloEl = document.getElementById('titulo-usuario-nome');
+      if (tituloEl) tituloEl.textContent = usuarioNome;
+      document.title = `${usuarioNome} • Dashboard de Vendas & Comissões`;
+    }
+
+    function setupNomeUsuario() {
+      const container = document.getElementById('container-usuario-nome');
+      const input = document.getElementById('input-usuario-nome');
+      if (!container || !input) return;
+
+      atualizarNomeUsuarioUI(usuarioNome);
+
+      container.addEventListener('click', () => {
+        container.classList.add('hidden');
+        input.classList.remove('hidden');
+        input.value = usuarioNome === 'Minhas Vendas' ? '' : usuarioNome;
+        input.focus();
+        input.select();
+      });
+
+      function salvar() {
+        const novoNome = input.value.trim();
+        if (novoNome) {
+          usuarioNome = novoNome;
+          localStorage.setItem(STORAGE_KEY_NOME, usuarioNome);
+          showToast(`Nome atualizado para "${usuarioNome}"!`, 'info');
+        } else {
+          usuarioNome = 'Minhas Vendas';
+          localStorage.removeItem(STORAGE_KEY_NOME);
+        }
+        atualizarNomeUsuarioUI(usuarioNome);
+        input.classList.add('hidden');
+        container.classList.remove('hidden');
+        lucide.createIcons({ root: container });
+      }
+
+      input.addEventListener('blur', salvar);
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          input.blur();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          input.value = usuarioNome;
+          input.classList.add('hidden');
+          container.classList.remove('hidden');
+        }
+      });
+    }
 
     // Base de vendas inicial dinâmica para o ano/mês corrente
     const agoraInit = new Date();
@@ -752,19 +849,18 @@
       ]);
     }
 
-    // Calcula dias úteis com suporte a dias decorridos e dias restantes para faturar
-    function calcularDiasUteisMes(ano, mesZeroIndexed) {
+    // Calcula dias úteis com suporte a data de referência, dias decorridos e dias restantes para faturar
+    function calcularDiasUteisMes(ano, mesZeroIndexed, dataRefObj = new Date()) {
       const feriados = getFeriadosNacionais(ano);
       const ultimoDiaMes = new Date(ano, mesZeroIndexed + 1, 0).getDate();
-      const hoje = new Date();
-      const ehMesAtual = hoje.getFullYear() === ano && hoje.getMonth() === mesZeroIndexed;
+
+      const ehMesReferencia = dataRefObj.getFullYear() === ano && dataRefObj.getMonth() === mesZeroIndexed;
+      const refDia = dataRefObj.getDate();
 
       let totalUteis = 0;
-      let uteisPassados = 0; // Dias úteis anteriores a hoje
-      let ehHojeUtil = false; // Se hoje é dia útil
-      let uteisFuturos = 0;  // Dias úteis estritamente posteriores a hoje
-
-      const hojeDia = hoje.getDate();
+      let uteisPassados = 0; // Dias úteis anteriores à data de referência
+      let ehDataRefUtil = false; // Se a data de referência é dia útil
+      let uteisFuturos = 0;  // Dias úteis estritamente posteriores à data de referência
 
       for (let dia = 1; dia <= ultimoDiaMes; dia++) {
         const dataAtual = new Date(ano, mesZeroIndexed, dia);
@@ -779,11 +875,11 @@
 
         if (!ehDomingo && !ehFeriado) {
           totalUteis++;
-          if (ehMesAtual) {
-            if (dia < hojeDia) {
+          if (ehMesReferencia) {
+            if (dia < refDia) {
               uteisPassados++;
-            } else if (dia === hojeDia) {
-              ehHojeUtil = true;
+            } else if (dia === refDia) {
+              ehDataRefUtil = true;
             } else {
               uteisFuturos++;
             }
@@ -791,14 +887,26 @@
         }
       }
 
-      // Dias disponíveis para trabalhar neste mês (conta com hoje se hoje for dia útil)
-      const diasRestantesParaTrabalhar = ehMesAtual ? ((ehHojeUtil ? 1 : 0) + uteisFuturos) : totalUteis;
-      const uteisDecorridos = ehMesAtual ? (uteisPassados + (ehHojeUtil ? 1 : 0)) : totalUteis;
+      let diasRestantesParaTrabalhar;
+      let uteisDecorridos;
+
+      if (ehMesReferencia) {
+        diasRestantesParaTrabalhar = Math.max(1, (ehDataRefUtil ? 1 : 0) + uteisFuturos);
+        uteisDecorridos = uteisPassados + (ehDataRefUtil ? 1 : 0);
+      } else if (dataRefObj > new Date(ano, mesZeroIndexed + 1, 0)) {
+        // Data de referência posterior ao mês analisado: mês já concluído
+        diasRestantesParaTrabalhar = 1;
+        uteisDecorridos = totalUteis;
+      } else {
+        // Data de referência anterior ao início do mês analisado
+        diasRestantesParaTrabalhar = Math.max(1, totalUteis);
+        uteisDecorridos = 0;
+      }
 
       return {
         totalUteis: Math.max(1, totalUteis),
         uteisPassados,
-        ehHojeUtil,
+        ehHojeUtil: ehDataRefUtil,
         uteisFuturos,
         diasRestantesParaTrabalhar: Math.max(1, diasRestantesParaTrabalhar),
         uteisDecorridos
@@ -894,11 +1002,42 @@
     }
 
     function atualizarDashboard() {
-      const hoje = new Date();
-      const anoAtual = hoje.getFullYear();
-      const mesAtualZero = hoje.getMonth();
-      const dataHojeStr = `${anoAtual}-${String(mesAtualZero+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`;
-      const mesAtualChave = `${anoAtual}-${String(mesAtualZero+1).padStart(2,'0')}`;
+      const hojeObj = new Date();
+      const dataHojeStr = `${hojeObj.getFullYear()}-${String(hojeObj.getMonth()+1).padStart(2,'0')}-${String(hojeObj.getDate()).padStart(2,'0')}`;
+
+      const inputDataRef = document.getElementById('campo-data-referencia');
+      let dataRefStr = inputDataRef ? inputDataRef.value : '';
+      if (!dataRefStr) {
+        dataRefStr = dataHojeStr;
+        if (inputDataRef) inputDataRef.value = dataHojeStr;
+      }
+
+      const partesDataRef = dataRefStr.split('-').map(Number);
+      const refAno = partesDataRef[0];
+      const refMesNum = partesDataRef[1];
+      const refDia = partesDataRef[2];
+      const refMesZero = refMesNum - 1;
+      const dataRefObj = new Date(refAno, refMesZero, refDia);
+
+      const mesRefChave = `${refAno}-${String(refMesNum).padStart(2,'0')}`;
+      const inicioMesRefStr = `${mesRefChave}-01`;
+      const dataRefFormatada = `${String(refDia).padStart(2,'0')}/${String(refMesNum).padStart(2,'0')}/${refAno}`;
+      const dataRefDiaMes = `${String(refDia).padStart(2,'0')}/${String(refMesNum).padStart(2,'0')}`;
+
+      // Badge de status da referência
+      const badgeStatus = document.getElementById('badge-referencia-status');
+      if (badgeStatus) {
+        if (dataRefStr === dataHojeStr) {
+          badgeStatus.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300";
+          badgeStatus.textContent = "Hoje (Tempo Real)";
+        } else if (dataRefStr < dataHojeStr) {
+          badgeStatus.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300";
+          badgeStatus.textContent = `Histórico até ${dataRefFormatada}`;
+        } else {
+          badgeStatus.className = "px-2 py-0.5 rounded-full text-[10px] font-bold bg-violet-100 text-violet-800 dark:bg-violet-950/60 dark:text-violet-300";
+          badgeStatus.textContent = `Projeção até ${dataRefFormatada}`;
+        }
+      }
 
       let totalHoje = 0;
       let pedidosHoje = 0;
@@ -907,17 +1046,34 @@
 
       vendas.forEach(v => {
         const val = parseFloat(v.valor) || 0;
-        if (v.data === dataHojeStr) {
+        if (v.data === dataRefStr) {
           totalHoje += val;
           pedidosHoje++;
         }
-        if (v.data && v.data.startsWith(mesAtualChave)) {
+        // Total acumulado no mês da referência até a data de referência selecionada
+        if (v.data && v.data >= inicioMesRefStr && v.data <= dataRefStr) {
           totalMes += val;
           pedidosMes++;
         }
       });
 
       const ticketMedio = pedidosMes > 0 ? (totalMes / pedidosMes) : 0;
+
+      // Labels Dinâmicos
+      const lblVendasHoje = document.getElementById('lbl-vendas-hoje');
+      if (lblVendasHoje) {
+        lblVendasHoje.textContent = dataRefStr === dataHojeStr ? 'Vendas Hoje' : `Vendas (${dataRefDiaMes})`;
+      }
+
+      const lblFaturamentoMes = document.getElementById('lbl-faturamento-mes');
+      if (lblFaturamentoMes) {
+        lblFaturamentoMes.textContent = dataRefStr === dataHojeStr ? 'Faturamento Mês' : `Faturamento (até ${dataRefDiaMes})`;
+      }
+
+      const subtextoFatMes = document.getElementById('subtexto-faturamento-mes');
+      if (subtextoFatMes) {
+        subtextoFatMes.textContent = `Acumulado no mês até ${dataRefDiaMes}`;
+      }
 
       // Cards de Vendas
       document.getElementById('card-vendas-hoje').textContent = formatMoeda(totalHoje);
@@ -927,7 +1083,7 @@
       document.getElementById('card-total-pedidos').textContent = pedidosMes;
 
       // Dias Úteis e Metas Dinâmicas
-      const { totalUteis, uteisPassados, ehHojeUtil, uteisFuturos, diasRestantesParaTrabalhar, uteisDecorridos } = calcularDiasUteisMes(anoAtual, mesAtualZero);
+      const { totalUteis, uteisPassados, ehHojeUtil, uteisFuturos, diasRestantesParaTrabalhar, uteisDecorridos } = calcularDiasUteisMes(refAno, refMesZero, dataRefObj);
 
       // Meta Base Inicial (Fixa teórica do início do mês: Alvo ÷ Total de dias úteis)
       const metaBaseInicial = targetAtivo / totalUteis;
@@ -974,7 +1130,7 @@
         }
         if (badgeMetaHoje) {
           badgeMetaHoje.className = "text-[10px] font-bold text-emerald-600 dark:text-emerald-400";
-          badgeMetaHoje.textContent = "✓ Meta batida!";
+          badgeMetaHoje.textContent = `✓ Meta de ${dataRefDiaMes} batida!`;
         }
         if (subtextoMetaHoje) {
           subtextoMetaHoje.textContent = "Meta mensal já conquistada!";
@@ -986,32 +1142,27 @@
         cardMetaDiaria.className = "text-lg sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-1";
 
         // Comparativo com a Meta Base Inicial (R$ X/dia)
-        // Se ela vendeu mais, a meta diária restante é MENOR que a meta base inicial!
-        // Se ela vendeu menos, a meta diária restante é MAIOR para compensar!
         const diferenca = metaDiariaDinamica - metaBaseInicial;
 
         if (badgeRitmo) {
           if (diferenca < -10) {
-            // Vendeu mais: Meta diária diminuiu (aliviou!)
             const valorAlivio = Math.abs(diferenca);
             badgeRitmo.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300";
             badgeRitmo.innerHTML = `<i data-lucide="trending-down" class="w-3 h-3"></i> Caiu ${formatMoeda(valorAlivio)}/dia (Meta aliviada!)`;
           } else if (diferenca > 10) {
-            // Vendeu menos: Meta diária aumentou (precisa acelerar!)
             badgeRitmo.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300";
             badgeRitmo.innerHTML = `<i data-lucide="trending-up" class="w-3 h-3"></i> Subiu ${formatMoeda(diferenca)}/dia (Acelerar ritmo)`;
           } else {
-            // No ritmo exato
             badgeRitmo.className = "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300";
             badgeRitmo.innerHTML = `<i data-lucide="check" class="w-3 h-3"></i> No ritmo previsto da meta`;
           }
         }
 
-        // Atualização em tempo real do card "Vendas Hoje" com base na meta diária
+        // Atualização em tempo real do card Vendas na Data com base na meta diária
         if (badgeMetaHoje && subtextoMetaHoje) {
           if (totalHoje >= metaDiariaDinamica && metaDiariaDinamica > 0) {
             badgeMetaHoje.className = "text-[10px] font-bold text-emerald-600 dark:text-emerald-400";
-            badgeMetaHoje.textContent = "✓ Meta de hoje batida!";
+            badgeMetaHoje.textContent = `✓ Meta de ${dataRefDiaMes} batida!`;
             subtextoMetaHoje.textContent = `Superou a meta em ${formatMoeda(totalHoje - metaDiariaDinamica)}`;
           } else if (metaDiariaDinamica > 0) {
             const percHoje = Math.min(100, (totalHoje / metaDiariaDinamica) * 100).toFixed(0);
@@ -1037,16 +1188,16 @@
         }
       });
 
-      atualizarGraficos(mesAtualChave);
+      atualizarGraficos(refAno, refMesZero, refDia);
       renderizarTabela();
       lucide.createIcons();
     }
 
-    function atualizarGraficos(mesAtualChave) {
+    function atualizarGraficos(refAno, refMesZero, refDia) {
       const diasLabels = [];
       const diasValores = [];
       for (let i = 14; i >= 0; i--) {
-        const d = new Date();
+        const d = new Date(refAno, refMesZero, refDia);
         d.setDate(d.getDate() - i);
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -1069,10 +1220,9 @@
       const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       const mesesLabels = [];
       const mesesValores = [];
-      const hoje = new Date();
 
       for (let i = 5; i >= 0; i--) {
-        const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+        const d = new Date(refAno, refMesZero - i, 1);
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, '0');
         const key = `${y}-${m}`;
@@ -1105,12 +1255,16 @@
       const busca = (document.getElementById('filtro-busca').value || '').toLowerCase();
       const pagFiltro = document.getElementById('filtro-pagamento').value;
       const mesFiltro = document.getElementById('filtro-mes') ? document.getElementById('filtro-mes').value : 'todos';
+      const limitarDataRef = document.getElementById('filtro-limitar-data-ref') && document.getElementById('filtro-limitar-data-ref').checked;
+      const inputDataRef = document.getElementById('campo-data-referencia');
+      const dataRefStr = inputDataRef ? inputDataRef.value : '';
 
       const vendasFiltradas = vendas.filter(v => {
         const matchBusca = (v.descricao || '').toLowerCase().includes(busca);
         const matchPag = pagFiltro === 'todos' || v.pagamento === pagFiltro;
         const matchMes = mesFiltro === 'todos' || (v.data && v.data.startsWith(mesFiltro));
-        return matchBusca && matchPag && matchMes;
+        const matchDataRef = !limitarDataRef || !dataRefStr || (v.data && v.data <= dataRefStr);
+        return matchBusca && matchPag && matchMes && matchDataRef;
       }).sort((a, b) => new Date(b.data || 0) - new Date(a.data || 0));
 
       // Atualiza Totalizadores no Rodapé
@@ -1282,8 +1436,9 @@
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
       const hoje = new Date().toISOString().split('T')[0];
+      const nomeSanitizado = usuarioNome.toLowerCase().replace(/[^a-z0-9]/gi, '_').replace(/_+/g, '_');
       link.setAttribute('href', url);
-      link.setAttribute('download', `vendas_bruna_${hoje}.csv`);
+      link.setAttribute('download', `vendas_${nomeSanitizado || 'app'}_${hoje}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -1421,6 +1576,28 @@
     document.getElementById('filtro-busca').addEventListener('input', renderizarTabela);
     document.getElementById('filtro-pagamento').addEventListener('change', renderizarTabela);
     document.getElementById('filtro-mes').addEventListener('change', renderizarTabela);
+    if (document.getElementById('filtro-limitar-data-ref')) {
+      document.getElementById('filtro-limitar-data-ref').addEventListener('change', renderizarTabela);
+    }
+
+    // Controles da Data de Referência das Estatísticas
+    const campoDataRef = document.getElementById('campo-data-referencia');
+    if (campoDataRef) {
+      campoDataRef.addEventListener('change', () => {
+        atualizarDashboard();
+      });
+    }
+
+    const btnRedefinirHoje = document.getElementById('btn-redefinir-data-hoje');
+    if (btnRedefinirHoje) {
+      btnRedefinirHoje.addEventListener('click', () => {
+        const hojeObj = new Date();
+        const dataHojeStr = `${hojeObj.getFullYear()}-${String(hojeObj.getMonth()+1).padStart(2,'0')}-${String(hojeObj.getDate()).padStart(2,'0')}`;
+        if (campoDataRef) campoDataRef.value = dataHojeStr;
+        atualizarDashboard();
+        showToast('Data redefinida para hoje.', 'info');
+      });
+    }
 
     // Atalhos de Teclado no PC (N, Esc, /)
     document.addEventListener('keydown', (e) => {
@@ -1468,6 +1645,15 @@
 
     // Inicialização
     document.addEventListener('DOMContentLoaded', () => {
+      // Define a data inicial de referência como hoje
+      const hojeInit = new Date();
+      const dataHojeInitStr = `${hojeInit.getFullYear()}-${String(hojeInit.getMonth()+1).padStart(2,'0')}-${String(hojeInit.getDate()).padStart(2,'0')}`;
+      const inputRef = document.getElementById('campo-data-referencia');
+      if (inputRef && !inputRef.value) {
+        inputRef.value = dataHojeInitStr;
+      }
+
+      setupNomeUsuario();
       lucide.createIcons();
       initCharts();
       setupTargetSelector();
